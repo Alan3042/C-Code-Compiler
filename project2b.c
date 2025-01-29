@@ -254,4 +254,3 @@ void add_sym(int t, char *id){
 
     //printf("Ident: %s\n", st->sym.ident);
 }
-
