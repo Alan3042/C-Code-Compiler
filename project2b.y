@@ -17,7 +17,7 @@ IfStmt *ifStmt(int oper, Expr *expr, StatementSeq *statementSeq, ElseClause *els
 Assignment *assignment(char *ident, Expr *expr, int readInt);
 Statements *statements(Assignment *assignment, IfStmt *ifStmt, WhileStmt *whileStmt, WriteInt *writeInt);
 StatementSeq *statementSeq(Statements *statements, StatementSeq *statementSeq);
-Type *type(int intType, int boolType);
+Type *type(int type);
 Declaration *declaration(char *ident, Type *type, Declaration *declaration);
 
 
@@ -109,10 +109,10 @@ Declaration:
 Type:
     	INT {
                // printf("int\n"); 
-                $$ = type(1, 0);} 
+                $$ = type(1);} 
         | BOOL {
                 //printf("bool\n"); 
-                $$ = type(0, 1);}
+                $$ = type(2);}
 	;
 
 StatementSeq:
@@ -303,13 +303,13 @@ StatementSeq *statementSeq(Statements *statements, StatementSeq *statementSeq){
 
 	return p;
 }
-Type *type(int intType, int boolType){
+Type *type(int type){
 	Type *p;
     //printf("Size of type: %ld\n", sizeof(Type));
 	if ((p = malloc(sizeof(Type))) == NULL)
 		yyerror("out of memory");
-	p->intType = intType;
-	p->boolType = boolType;
+	p->type = type;
+
 
 	return p;
 }
@@ -331,7 +331,7 @@ int yyerror(char *s) {
 }
 int main(void) {
 	yyparse();
-	printf("SUCCESS\n");
+	//printf("SUCCESS\n");
 }
 
 

@@ -29,6 +29,8 @@ typedef struct  {
 
 symTabl *st = NULL;
 
+int checkType = 0;
+
 
 void *genCode(Declaration *declaration, StatementSeq *statementSeq){
         printf("#include <stdio.h>\n");
@@ -44,11 +46,11 @@ void *gencodeDecl(Declaration *d) {
 	    printf(" ");
 	    printf("%s", d->ident);
 	    printf(";\n");
-        if(d->type->intType==1){
+        if(d->type->type==1){
             //printf("int\n");
             add_sym(1, d->ident); 
         }
-        if(d->type->boolType==1){
+        if(d->type->type==2){
             //printf("bool\n");
             add_sym(2, d->ident);
         }
@@ -59,9 +61,11 @@ void *gencodeDecl(Declaration *d) {
 }
 
 void *gencodeType(Type *t) {
-    if(t->intType==1)
+    //printf("%d\n", t->type);
+    if(t->type==1) {
         printf("\tint");
-    if(t->boolType==1)
+    }
+    if(t->type==2)
         printf("\tbool");
 }
 
@@ -86,14 +90,35 @@ void *gencodeStmt(Statements *stmt) {
         gencodeWrite(stmt->writeInt);
 }
 
-void *gencodeAsgn(Assignment *asgn) {  
+void *gencodeAsgn(Assignment *asgn) { 
+
+    symTabl *s;
+    
+ 
     //printf("Print assign\n");
     if(asgn->readInt == 1) {
-        printf("\tscanf(");
-        printf("%s", asgn->ident);
+        HASH_FIND_STR(st, asgn->ident, s);
+        if (s == NULL) {
+            printf("\t%s", asgn->ident);
+            printf("\nError. %s is undeclared.\n", asgn->ident);
+            exit(1);
+        }
+        printf("\tscanf(\"%%d\", ");
+        printf("&%s", asgn->ident);
         printf(");\n");
     }
     else {
+        HASH_FIND_STR(st, asgn->ident, s);
+
+        if (s == NULL) {
+            printf("\t%s", asgn->ident);
+            printf(" = ");
+            gencodeExpr(asgn->expr);
+            printf(";\n");
+            printf("\nError. %s is undeclared.\n", asgn->ident);
+            exit(1);
+        } 
+        checkType = s->type;
         printf("\t%s", asgn->ident);
         printf(" = ");
         gencodeExpr(asgn->expr);
@@ -102,26 +127,26 @@ void *gencodeAsgn(Assignment *asgn) {
 }
 
 void *gencodeIf(IfStmt *ifStmt) {	
-	printf("\nif ( ");
+	printf("\n\tif ( ");
 	gencodeExpr(ifStmt->expr);
 	printf(" ) {\n" );
 	gencodeStmtSeq(ifStmt->statementSeq);
-	printf("}\n");
+	printf("\t}\n");
     if (ifStmt->elseClause != NULL)
 	    gencodeElse(ifStmt->elseClause);
 }
 
 void *gencodeElse(ElseClause *e) {
-	 printf("else {\n");
+	 printf("\telse {\n\t");
 	 gencodeStmtSeq(e->statementSeq);
-	 printf(" }\n");
+	 printf("\t}\n");
 }
 void *gencodeWhile(WhileStmt *w) {
-    printf("\nwhile ( ");
+    printf("\n\twhile ( ");
 	gencodeExpr(w->expr);
 	printf(" ) {\n");
 	gencodeStmtSeq(w->statementSeq);
-	printf(" }\n");	
+	printf("\t}\n");	
 }
 void *gencodeWrite(WriteInt *write){
     printf("\tprintf(\"%%d\", ");
@@ -180,6 +205,7 @@ void *gencodeFactor(Factor *fact){
 
 	if(fact->type == 0) {
         HASH_FIND_STR(st, fact->ident, s);
+        //printf("%d\n", s->type);
         if (s == NULL) {
             printf("%s", fact->ident);
             printf("\nError. %s is undeclared.\n", fact->ident);
@@ -193,10 +219,21 @@ void *gencodeFactor(Factor *fact){
             printf("\nInteger overflow.\n");
             exit(1);
         }
+        else if (checkType == 2) {
+            printf("%d", fact->numb);
+            printf("\nType mismatch. int cannot be assigned to bool.\n"); 
+            exit(1);       
+        }
 		printf("%d", fact->numb);
     }
-	if(fact->type == 2)
-		printf("%d", fact->boollit);
+	if(fact->type == 2) {
+        if (checkType == 1) {
+            printf("%s", fact->boollit ? "true" : "false");
+            printf("\nType mismatch. bool cannot be assigned to int.\n"); 
+            exit(1);       
+        }
+		printf("%s", fact->boollit ? "true" : "false");
+    }
 	if(fact->type == 3){
         printf("( ");
 	    gencodeExpr(fact->expr);

@@ -67,8 +67,7 @@ typedef struct statementSeq {
 } StatementSeq;
 
 typedef struct type {
-	int intType;
-	int boolType;
+	int type;
 } Type;
 
 typedef struct declaration {
